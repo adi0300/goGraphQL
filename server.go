@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 )
@@ -24,7 +25,7 @@ func main() {
 
 	router.Handle("/"+config.GetConfig().AppVersion+"/query", handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}})))
 
-	//	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	router.Handle("/", playground.Handler("GraphQL playground", "/"+config.GetConfig().AppVersion+"/query"))
 	//	http.Handle("/query", srv)
 
 	log.Printf("connected to http://localhost:8080/")

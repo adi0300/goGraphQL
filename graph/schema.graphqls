@@ -15,10 +15,10 @@ type User {
 }
 
 type Company{
-  id: String!
-  locationID: String!
+  id: String
+  locationID: String
   name: String!
-  location: Location!
+  location: Location
   employees: [Employee]
 }
 
@@ -42,7 +42,7 @@ type Employee{
 type Query {
   todos: [Todo!]!
   users: [User]!
-  company: Company!
+  company(name: String!): Company!
 }
 
 input NewTodo {
@@ -59,13 +59,13 @@ input NewLocation{
 input NewEmployee{
   location: NewLocation
   name: String!
-  age: Int!
-  gender: String!
+  age: Int
+  gender: String
   companyID: String
 }
 input NewCompany {
-  id: String!
-  locationID: String!
+  id: String
+  locationID: String
   name: String!
   location: NewLocation!
   employees: [NewEmployee]!

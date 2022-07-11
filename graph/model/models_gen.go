@@ -3,8 +3,8 @@
 package model
 
 type NewCompany struct {
-	ID         string         `json:"id"`
-	LocationID string         `json:"locationID"`
+	ID         *string        `json:"id"`
+	LocationID *string        `json:"locationID"`
 	Name       string         `json:"name"`
 	Location   *NewLocation   `json:"location"`
 	Employees  []*NewEmployee `json:"employees"`
@@ -13,8 +13,8 @@ type NewCompany struct {
 type NewEmployee struct {
 	Location  *NewLocation `json:"location"`
 	Name      string       `json:"name"`
-	Age       int          `json:"age"`
-	Gender    string       `json:"gender"`
+	Age       *int         `json:"age"`
+	Gender    *string      `json:"gender"`
 	CompanyID *string      `json:"companyID"`
 }
 

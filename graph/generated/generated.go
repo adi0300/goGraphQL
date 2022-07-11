@@ -77,7 +77,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Company func(childComplexity int) int
+		Company func(childComplexity int, name string) int
 		Todos   func(childComplexity int) int
 		Users   func(childComplexity int) int
 	}
@@ -103,7 +103,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Todos(ctx context.Context) ([]*model.Todo, error)
 	Users(ctx context.Context) ([]*model.User, error)
-	Company(ctx context.Context) (*entity.Company, error)
+	Company(ctx context.Context, name string) (*entity.Company, error)
 }
 
 type executableSchema struct {
@@ -274,7 +274,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.Company(childComplexity), true
+		args, err := ec.field_Query_company_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Company(childComplexity, args["name"].(string)), true
 
 	case "Query.todos":
 		if e.complexity.Query.Todos == nil {
@@ -421,10 +426,10 @@ type User {
 }
 
 type Company{
-  id: String!
-  locationID: String!
+  id: String
+  locationID: String
   name: String!
-  location: Location!
+  location: Location
   employees: [Employee]
 }
 
@@ -448,7 +453,7 @@ type Employee{
 type Query {
   todos: [Todo!]!
   users: [User]!
-  company: Company!
+  company(name: String!): Company!
 }
 
 input NewTodo {
@@ -465,13 +470,13 @@ input NewLocation{
 input NewEmployee{
   location: NewLocation
   name: String!
-  age: Int!
-  gender: String!
+  age: Int
+  gender: String
   companyID: String
 }
 input NewCompany {
-  id: String!
-  locationID: String!
+  id: String
+  locationID: String
   name: String!
   location: NewLocation!
   employees: [NewEmployee]!
@@ -550,6 +555,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_company_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -609,14 +629,11 @@ func (ec *executionContext) _Company_id(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Company_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -653,14 +670,11 @@ func (ec *executionContext) _Company_locationID(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Company_locationID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -741,14 +755,11 @@ func (ec *executionContext) _Company_location(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*entity.Location)
 	fc.Result = res
-	return ec.marshalNLocation2ᚖgoGraphQLᚋentityᚐLocation(ctx, field.Selections, res)
+	return ec.marshalOLocation2ᚖgoGraphQLᚋentityᚐLocation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Company_location(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1646,7 +1657,7 @@ func (ec *executionContext) _Query_company(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Company(rctx)
+		return ec.resolvers.Query().Company(rctx, fc.Args["name"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1684,6 +1695,17 @@ func (ec *executionContext) fieldContext_Query_company(ctx context.Context, fiel
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Company", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_company_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -3875,7 +3897,7 @@ func (ec *executionContext) unmarshalInputNewCompany(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			it.ID, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3883,7 +3905,7 @@ func (ec *executionContext) unmarshalInputNewCompany(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("locationID"))
-			it.LocationID, err = ec.unmarshalNString2string(ctx, v)
+			it.LocationID, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3951,7 +3973,7 @@ func (ec *executionContext) unmarshalInputNewEmployee(ctx context.Context, obj i
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("age"))
-			it.Age, err = ec.unmarshalNInt2int(ctx, v)
+			it.Age, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3959,7 +3981,7 @@ func (ec *executionContext) unmarshalInputNewEmployee(ctx context.Context, obj i
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gender"))
-			it.Gender, err = ec.unmarshalNString2string(ctx, v)
+			it.Gender, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4079,16 +4101,10 @@ func (ec *executionContext) _Company(ctx context.Context, sel ast.SelectionSet, 
 
 			out.Values[i] = ec._Company_id(ctx, field, obj)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "locationID":
 
 			out.Values[i] = ec._Company_locationID(ctx, field, obj)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "name":
 
 			out.Values[i] = ec._Company_name(ctx, field, obj)
@@ -4100,9 +4116,6 @@ func (ec *executionContext) _Company(ctx context.Context, sel ast.SelectionSet, 
 
 			out.Values[i] = ec._Company_location(ctx, field, obj)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "employees":
 
 			out.Values[i] = ec._Company_employees(ctx, field, obj)
@@ -5354,6 +5367,29 @@ func (ec *executionContext) marshalOEmployee2ᚕgoGraphQLᚋentityᚐEmployee(ct
 	return ret
 }
 
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOLocation2ᚖgoGraphQLᚋentityᚐLocation(ctx context.Context, sel ast.SelectionSet, v *entity.Location) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Location(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalONewEmployee2ᚖgoGraphQLᚋgraphᚋmodelᚐNewEmployee(ctx context.Context, v interface{}) (*model.NewEmployee, error) {
 	if v == nil {
 		return nil, nil
@@ -5368,6 +5404,16 @@ func (ec *executionContext) unmarshalONewLocation2ᚖgoGraphQLᚋgraphᚋmodel�
 	}
 	res, err := ec.unmarshalInputNewLocation(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

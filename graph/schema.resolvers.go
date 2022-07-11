@@ -6,7 +6,6 @@ package graph
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"goGraphQL/db"
 	"goGraphQL/entity"
 	"goGraphQL/graph/generated"
@@ -70,8 +69,10 @@ func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 }
 
 // Company is the resolver for the company field.
-func (r *queryResolver) Company(ctx context.Context) (*entity.Company, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) Company(ctx context.Context, name string) (*entity.Company, error) {
+	company := new(entity.Company)
+	db.GetDB().Where("name=?", name).Find(&company)
+	return company, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
